@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require("cors");
-const { MongoClient } = require('mongodb');
+const MongoClient = require("mongodb").MongoClient;
+const ObjectId = require("mongodb").ObjectId;
 require('dotenv').config();
 
 const app = express();
@@ -22,15 +23,56 @@ async function run() {
         await client.connect();
         const database = client.db('birdy')
         const servicesCollection = database.collection('services');
-        // const orderCollection = database.collection('placeOrders');
+        const orderCollection = database.collection('placeOrders');
 
 
-        // GET API
+        // GET ALL SERVICES
         app.get('/services', async (req, res) => {
             const cursor = servicesCollection.find({});
             const services = await cursor.toArray();
             res.send(services);
         });
+
+        // GET SINGLE SERVICE
+        app.get("/singleProduct/:id", async (req, res) => {
+            console.log(req.params.id)
+            const result = await servicesCollection.find({ _id: ObjectId(req.params.id) }).toArray();
+            res.send(result[0]);
+        });
+
+        // CONFIRM ORDER
+        app.post("/confirmOrder", async (req, res) => {
+            const result = await orderCollection.insertOne(req.body);
+            res.send(result);
+        });
+
+        // MY CONFIRM ORDERS
+        app.get("/myOrders/:email", async (req, res) => {
+            const result = await orderCollection.find({ email: req.params.email }).toArray();
+            res.send(result);
+        });
+
+        // DELETE ORDER
+        app.delete("/deleteOrder/:id", async (req, res) => {
+            const result = await orderCollection.deleteOne({
+                _id: ObjectId(req.params.id),
+            })
+            res.send(result);
+        });
+
+        // // DELETE SERVICE
+        // app.delete("/deleteService/:id", async (req, res) => {
+        //     const result = await servicesCollection.deleteOne({
+        //         _id: ObjectId(req.params.id),
+        //     })
+        //     res.send(result);
+        // })
+
+        // // ALL ORDER
+        // app.get("/allOrders", async (req, res) => {
+        //     const result = await orderCollection.find({}).toArray();
+        //     res.send(result);
+        // });
 
         // POST API
         app.post('/services', async (req, res) => {
